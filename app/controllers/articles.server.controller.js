@@ -36,7 +36,6 @@ var getErrorMessage = function(err) {
  */
 exports.create = function(req, res) {
 	var article = new Article(req.body);
-	article.user = req.user;
 
 	article.save(function(err) {
 		if (err) {
@@ -96,7 +95,7 @@ exports.delete = function(req, res) {
  * List of Articles
  */
 exports.list = function(req, res) {
-	Article.find().sort('-created').populate('user', 'displayName').exec(function(err, articles) {
+	Article.find().sort('-created').exec(function(err, articles) {
 		if (err) {
 			return res.send(400, {
 				message: getErrorMessage(err)
@@ -111,22 +110,10 @@ exports.list = function(req, res) {
  * Article middleware
  */
 exports.articleByID = function(req, res, next, id) {
-	Article.findById(id).populate('user', 'displayName').exec(function(err, article) {
+	Article.findById(id).exec(function(err, article) {
 		if (err) return next(err);
 		if (!article) return next(new Error('Failed to load article ' + id));
 		req.article = article;
 		next();
 	});
-};
-
-/**
- * Article authorization middleware
- */
-exports.hasAuthorization = function(req, res, next) {
-	if (req.article.user.id !== req.user.id) {
-		return res.send(403, {
-			message: 'User is not authorized'
-		});
-	}
-	next();
 };
